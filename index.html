@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Minecraft Worlds Hub</title>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛏️</text></svg>">
+   <style>
+:root {
+      --primary: #5b8c5a;
+      --primary-dark: #3a6b3a;
+      --secondary: #8a6d3b;
+      --accent: #d35400;
+      --light: #f5f5f5;
+      --dark: #2c3e50;
+      --gray: #7f8c8d;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --radius: 8px;
+      --transition: all 0.3s ease;
+   }
+
+      * {
+         margin: 0;
+         padding: 0;
+         box-sizing: border-box;
+         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+         background: linear-gradient(135deg, #1a2f3a 0%, #2c3e50 100%);
+         color: var(--light);
+         line-height: 1.6;
+         min-height: 100vh;
+         display: flex;
+         flex-direction: column;
+      }
+
+      .container {
+         max-width: 1200px;
+         margin: 0 auto;
+         padding: 0 20px;
+      }
+
+      header {
+         background: rgba(44, 62, 80, 0.95);
+         backdrop-filter: blur(10px);
+         padding: 15px 0;
+         box-shadow: var(--shadow);
+         position: sticky;
+         top: 0;
+         z-index: 100;
+      }
+
+      .header-content {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+      }
+
+      .logo-section {
+         display: flex;
+         align-items: center;
+         gap: 15px;
+      }
+
+      .logo {
+         height: 50px;
+         width: 50px;
+         background: var(--primary);
+         border-radius: 50%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-size: 24px;
+      }
+
+      .title {
+         font-size: 1.8rem;
+         font-weight: 700;
+         background: linear-gradient(45deg, var(--primary), var(--accent));
+         -webkit-background-clip: text;
+         -webkit-text-fill-color: transparent;
+      }
+
+      nav ul {
+         display: flex;
+         list-style: none;
+         gap: 20px;
+      }
+
+      nav a {
+         color: var(--light);
+         text-decoration: none;
+         padding: 8px 16px;
+         border-radius: var(--radius);
+         transition: var(--transition);
+         font-weight: 500;
+      }
+
+      nav a:hover, nav a.active {
+         background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .auth-buttons {
+         display: flex;
+         gap: 10px;
+      }
+
+      .btn {
+         padding: 10px 20px;
+         border: none;
+         border-radius: var(--radius);
+         cursor: pointer;
+         font-weight: 600;
+         transition: var(--transition);
+         display: inline-flex;
+         align-items: center;
+         gap: 8px;
+      }
+
+      .btn-primary {
+         background: linear-gradient(45deg, var(--secondary), var(--accent));
+         color: white;
+      }
+
+      .btn-primary:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-outline {
+         background-color: transparent;
+         border: 2px solid var(--light);
+         color: var(--light);
+      }
+
+      .btn-outline:hover {
+         background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-success {
+         background: linear-gradient(45deg, #27ae60, #2ecc71);
+         color: white;
+      }
+
+      .btn-success:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
+      }
+
+      .btn-danger {
+         background: linear-gradient(45deg, #c0392b, #e74c3c);
+         color: white;
+      }
+
+      .btn-danger:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 6px 12px rgba(192, 57, 43, 0.3);
+      }
+
+      .btn-small {
+         padding: 6px 12px;
+         font-size: 0.9rem;
+      }
+
+      main {
+         flex: 1;
+         padding: 30px 0;
+      }
+
+      .page-title {
+         text-align: center;
+         margin-bottom: 30px;
+         font-size: 2.5rem;
+         background: linear-gradient(45deg, var(--primary), var(--accent));
+         -webkit-background-clip: text;
+         -webkit-text-fill-color: transparent;
+         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .page-subtitle {
+         text-align: center;
+         margin-bottom: 40px;
+         color: #bdc3c7;
+         max-width: 600px;
+         margin-left: auto;
+         margin-right: auto;
+      }
+
+      .worlds-grid {
+         display: grid;
+         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+         gap: 25px;
+      }
+
+      .world-card {
+         background: rgba(44, 62, 80, 0.7);
+         border-radius: var(--radius);
+         overflow: hidden;
+         box-shadow: var(--shadow);
+         transition: var(--transition);
+         backdrop-filter: blur(10px);
+         border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .world-card:hover {
+         transform: translateY(-5px);
+         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .world-images {
+         position: relative;
+         height: 200px;
+         overflow: hidden;
+      }
+
+      .world-image {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         display: none;
+         transition: opacity 0.5s ease;
+      }
+
+      .world-image.active {
+         display: block;
+      }
+
+      .image-nav {
+         position: absolute;
+         top: 50%;
+         width: 100%;
+         display: flex;
+         justify-content: space-between;
+         transform: translateY(-50%);
+         padding: 0 10px;
+      }
+
+      .image-nav-btn {
+         background-color: rgba(0, 0, 0, 0.5);
+         color: white;
+         border: none;
+         width: 36px;
+         height: 36px;
+         border-radius: 50%;
+         cursor: pointer;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         transition: var(--transition);
+         backdrop-filter: blur(5px);
+      }
+
+      .image-nav-btn:hover {
+         background-color: rgba(0, 0, 0, 0.7);
+      }
+
+      .image-dots {
+         position: absolute;
+         bottom: 10px;
+         left: 0;
+         right: 0;
+         display: flex;
+         justify-content: center;
+         gap: 5px;
+      }
+
+      .image-dot {
+         width: 8px;
+         height: 8px;
+         border-radius: 50%;
+         background-color: rgba(255, 255, 255, 0.5);
+         cursor: pointer;
+         transition: var(--transition);
+      }
+
+      .image-dot.active {
+         background-color: white;
+         transform: scale(1.2);
+      }
+
+      .world-content {
+         padding: 20px;
+      }
+
+      .world-title {
+         font-size: 1.4rem;
+         margin-bottom: 10px;
+         color: var(--light);
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+      }
+
+      .world-meta {
+         display: flex;
+         justify-content: space-between;
+         margin-bottom: 15px;
+         font-size: 0.9rem;
+         color: #bdc3c7;
+      }
+
+      .world-description {
+         margin-bottom: 15px;
+         font-size: 0.95rem;
+         line-height: 1.5;
+      }
+
+      .world-stats {
+         display: flex;
+         justify-content: space-between;
+         margin-bottom: 15px;
+         font-size: 0.9rem;
+      }
+
+      .like-section {
+         display: flex;
+         align-items: center;
+         gap: 5px;
+         margin-bottom: 15px;
+      }
+
+      .like-btn {
+         background: none;
+         border: none;
+         font-size: 1.3rem;
+         cursor: pointer;
+         transition: var(--transition);
+         padding: 5px;
+         border-radius: 50%;
+      }
+
+      .like-btn:hover {
+         transform: scale(1.2);
+         background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .like-btn.liked {
+         color: #e74c3c;
+      }
+
+      .download-btn {
+         display: block;
+         width: 100%;
+         text-align: center;
+         padding: 12px;
+         background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+         color: white;
+         text-decoration: none;
+         border-radius: var(--radius);
+         transition: var(--transition);
+         font-weight: 600;
+         margin-bottom: 10px;
+      }
+
+      .download-btn:hover {
+         transform: translateY(-2px);
+         box-shadow: 0 6px 12px rgba(91, 140, 90, 0.3);
+      }
+
+      .uploader-info {
+         margin-top: 10px;
+         font-size: 0.85rem;
+         color: #95a5a6;
+         text-align: right;
+      }
+
+      .modal {
+         display: none;
+         position: fixed;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         background-color: rgba(0, 0, 0, 0.7);
+         z-index: 1000;
+         align-items: center;
+         justify-content: center;
+         backdrop-filter: blur(5px);
+      }
+
+      .modal-content {
+         background: rgba(44, 62, 80, 0.95);
+         border-radius: var(--radius);
+         width: 90%;
+         max-width: 500px;
+         max-height: 90vh;
+         overflow-y: auto;
+         padding: 30px;
+         position: relative;
+         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+         border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .close-modal {
+         position: absolute;
+         top: 15px;
+         right: 15px;
+         font-size: 1.5rem;
+         cursor: pointer;
+         background: none;
+         border: none;
+         color: var(--light);
+         transition: var(--transition);
+      }
+
+      .close-modal:hover {
+         color: var(--accent);
+      }
+
+      .form-group {
+         margin-bottom: 20px;
+      }
+
+      .form-group label {
+         display: block;
+         margin-bottom: 8px;
+         font-weight: 600;
+         color: #ecf0f1;
+      }
+
+      .form-control {
+         width: 100%;
+         padding: 12px 15px;
+         background: rgba(255, 255, 255, 0.1);
+         border: 1px solid rgba(255, 255, 255, 0.2);
+         border-radius: var(--radius);
+         font-size: 1rem;
+         color: var(--light);
+         transition: var(--transition);
+      }
+
+      .form-control:focus {
+         outline: none;
+         border-color: var(--primary);
+         box-shadow: 0 0 0 2px rgba(91, 140, 90, 0.3);
+      }
+
+      textarea.form-control {
+         min-height: 100px;
+         resize: vertical;
+      }
+
+      .file-input-container {
+         position: relative;
+         overflow: hidden;
+         display: inline-block;
+         width: 100%;
+      }
+
+      .file-input-container input[type="file"] {
+         position: absolute;
+         left: 0;
+         top: 0;
+         opacity: 0;
+         width: 100%;
+         height: 100%;
+         cursor: pointer;
+      }
+
+      .file-input-label {
+         display: block;
+         padding: 12px 15px;
+         background: rgba(255, 255, 255, 0.1);
+         border: 2px dashed rgba(255, 255, 255, 0.3);
+         border-radius: var(--radius);
+         text-align: center;
+         cursor: pointer;
+         transition: var(--transition);
+      }
+
+      .file-input-label:hover {
+         background: rgba(255, 255, 255, 0.15);
+         border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      .file-preview {
+         margin-top: 15px;
+         display: flex;
+         gap: 10px;
+         flex-wrap: wrap;
+      }
+
+      .file-preview-item {
+         position: relative;
+         width: 80px;
+         height: 80px;
+         border: 1px solid rgba(255, 255, 255, 0.2);
+         border-radius: var(--radius);
+         overflow: hidden;
+      }
+
+      .file-preview-item img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+      }
+
+      .file-preview-item .remove-file {
+         position: absolute;
+         top: 2px;
+         right: 2px;
+         background-color: rgba(231, 76, 60, 0.8);
+         color: white;
+         border: none;
+         border-radius: 50%;
+         width: 20px;
+         height: 20px;
+         font-size: 12px;
+         cursor: pointer;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+      }
+
+      .alert {
+         padding: 12px 15px;
+         border-radius: var(--radius);
+         margin-bottom: 20px;
+         font-weight: 500;
+      }
+
+      .alert-success {
+         background: rgba(46, 204, 113, 0.2);
+         color: #2ecc71;
+         border: 1px solid rgba(46, 204, 113, 0.3);
+      }
+
+      .alert-error {
+         background: rgba(231, 76, 60, 0.2);
+         color: #e74c3c;
+         border: 1px solid rgba(231, 76, 60, 0.3);
+      }
+
+      .alert-info {
+         background: rgba(52, 152, 219, 0.2);
+         color: #3498db;
+         border: 1px solid rgba(52, 152, 219, 0.3);
+      }
+
+      footer {
+         background: rgba(44, 62, 80, 0.95);
+         color: white;
+         text-align: center;
+         padding: 30px 0;
+         margin-top: 50px;
+      }
+
+      .footer-content {
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         gap: 15px;
+      }
+
+      .footer-links {
+         display: flex;
+         gap: 20px;
+      }
+
+      .footer-links a {
+         color: #bdc3c7;
+         text-decoration: none;
+         transition: var(--transition);
+      }
+
+      .footer-links a:hover {
+         color: var(--light);
+      }
+
+      .hidden {
+         display: none;
+      }
+
+      .loading {
+         text-align: center;
+         padding: 40px;
+         font-size: 1.2rem;
+         color: #bdc3c7;
+      }
+
+      .empty-state {
+         text-align: center;
+         padding: 40px;
+         color: #bdc3c7;
+      }
+
+      .empty-state h3 {
+         margin-bottom: 10px;
+         color: var(--light);
+      }
+
+      .user-avatar {
+         width: 40px;
+         height: 40px;
+         border-radius: 50%;
+         background: linear-gradient(45deg, var(--secondary), var(--accent));
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-weight: bold;
+         color: white;
+      }
+
+      .user-info {
+         display: flex;
+         align-items: center;
+         gap: 10px;
+      }
+
+      .stats {
+         display: flex;
+         justify-content: center;
+         gap: 30px;
+         margin: 30px 0;
+      }
+
+      .stat-item {
+         text-align: center;
+      }
+
+      .stat-value {
+         font-size: 2.5rem;
+         font-weight: 700;
+         background: linear-gradient(45deg, var(--primary), var(--accent));
+         -webkit-background-clip: text;
+         -webkit-text-fill-color: transparent;
+      }
+
+      .stat-label {
+         font-size: 0.9rem;
+         color: #bdc3c7;
+      }
+
+      .search-bar {
+         max-width: 500px;
+         margin: 0 auto 30px;
+         position: relative;
+      }
+
+      .search-bar input {
+         width: 100%;
+         padding: 12px 45px 12px 15px;
+         background: rgba(255, 255, 255, 0.1);
+         border: 1px solid rgba(255, 255, 255, 0.2);
+         border-radius: 30px;
+         color: var(--light);
+         font-size: 1rem;
+         transition: var(--transition);
+      }
+
+      .search-bar input:focus {
+         outline: none;
+         border-color: var(--primary);
+         box-shadow: 0 0 0 2px rgba(91, 140, 90, 0.3);
+      }
+
+      .search-icon {
+         position: absolute;
+         right: 15px;
+         top: 50%;
+         transform: translateY(-50%);
+         color: #bdc3c7;
+      }
+
+      .filter-options {
+         display: flex;
+         justify-content: center;
+         gap: 15px;
+         margin-bottom: 30px;
+         flex-wrap: wrap;
+      }
+
+      .filter-btn {
+         padding: 8px 16px;
+         background: rgba(255, 255, 255, 0.1);
+         border: 1px solid rgba(255, 255, 255, 0.2);
+         border-radius: 30px;
+         color: var(--light);
+         cursor: pointer;
+         transition: var(--transition);
+      }
+
+      .filter-btn.active {
+         background: var(--primary);
+      }
+
+      .filter-btn:hover {
+         background: rgba(255, 255, 255, 0.15);
+      }
+
+      @media (max-width: 768px) {
+         .header-content {
+            flex-direction: column;
+            gap: 15px;
+         }
+
+         nav ul {
+            flex-wrap: wrap;
+            justify-content: center;
+         }
+
+         .worlds-grid {
+            grid-template-columns: 1fr;
+         }
+
+         .stats {
+            flex-direction: column;
+            gap: 15px;
+         }
+
+         .page-title {
+            font-size: 2rem;
+         }
+      }
+
+      /* Animation for new world cards */
+      @keyframes fadeInUp {
+         from {
+            opacity: 0;
+            transform: translateY(20px);
+         }
+         to {
+            opacity: 1;
+            transform: translateY(0);
+         }
+      }
+
+      .fade-in-up {
+         animation: fadeInUp 0.5s ease forwards;
+      }
+   </style>
+</head>
+<body>
+   <header>
+      <div class="container header-content">
+         <div class="logo-section">
+            <div class="logo">
+               ⛏️
+            </div>
+            <div class="title">
+               Minecraft Worlds Hub
+            </div>
+         </div>
+         <nav>
+            <ul>
+               <li><a href="#" id="nav-explore" class="active">Explore Worlds</a></li>
+               <li><a href="#" id="nav-upload" class="hidden">Upload World</a></li>
+               <li><a href="#" id="nav-stats" class="hidden">My Stats</a></li>
+            </ul>
+         </nav>
+         <div class="auth-buttons">
+            <div id="user-info" class="user-info hidden">
+               <div class="user-avatar" id="user-avatar">
+                  U
+               </div>
+               <span id="username">User</span>
+            </div>
+            <button id="login-btn" class="btn btn-outline">Login</button>
+            <button id="logout-btn" class="btn btn-outline hidden">Logout</button>
+         </div>
+      </div>
+   </header>
+
+   <main>
+      <div class="container">
+         <h1 class="page-title" id="page-title">Explore Minecraft Worlds</h1>
+         <p class="page-subtitle" id="page-subtitle">
+            Discover amazing worlds created by the community. Download, explore, and get inspired!
+         </p>
+
+         <div id="stats-section" class="hidden">
+            <div class="stats">
+               <div class="stat-item">
+                  <div class="stat-value" id="total-worlds">
+                     0
+                  </div>
+                  <div class="stat-label">
+                     Total Worlds
+                  </div>
+               </div>
+               <div class="stat-item">
+                  <div class="stat-value" id="user-worlds">
+                     0
+                  </div>
+                  <div class="stat-label">
+                     Your Worlds
+                  </div>
+               </div>
+               <div class="stat-item">
+                  <div class="stat-value" id="total-likes">
+                     0
+                  </div>
+                  <div class="stat-label">
+                     Total Likes
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         <div id="explore-section">
+            <div class="search-bar">
+               <input type="text" id="search-input" placeholder="Search worlds by title, description, or uploader...">
+               <div class="search-icon">
+                  🔍
+               </div>
+            </div>
+
+            <div class="filter-options">
+               <div class="filter-btn active" data-filter="all">
+                  All Worlds
+               </div>
+               <div class="filter-btn" data-filter="recent">
+                  Recently Added
+               </div>
+               <div class="filter-btn" data-filter="popular">
+                  Most Popular
+               </div>
+               <div class="filter-btn hidden" data-filter="mine" id="filter-mine">
+                  My Worlds
+               </div>
+            </div>
+
+            <!-- Worlds Grid -->
+            <div id="worlds-container" class="worlds-grid">
+               <div class="loading">
+                  Loading worlds...
+               </div>
+            </div>
+         </div>
+
+         <!-- Upload Form -->
+         <div id="upload-section" class="hidden">
+            <form id="upload-form">
+               <div class="alert alert-info">
+                  <strong>Upload Guidelines:</strong> Please provide 2-3 images of your world and a valid world file (.mcworld, .mctemplate, or .zip).
+               </div>
+
+               <div class="form-group">
+                  <label for="world-images">World Images (2-3 images)</label>
+                  <div class="file-input-container">
+                     <input type="file" id="world-images" accept="image/*" multiple>
+                     <span class="file-input-label">Click to select images (JPEG, PNG, etc.)</span>
+                  </div>
+                  <div class="file-preview" id="image-preview"></div>
+               </div>
+
+               <div class="form-group">
+                  <label for="world-file">World File (.mcworld, .mctemplate, .zip)</label>
+                  <div class="file-input-container">
+                     <input type="file" id="world-file" accept=".mcworld,.mctemplate,.zip">
+                     <span class="file-input-label">Click to select world file</span>
+                  </div>
+                  <div id="world-file-name"></div>
+               </div>
+
+               <div class="form-group">
+                  <label for="world-seed">World Seed</label>
+                  <input type="text" id="world-seed" class="form-control" required>
+               </div>
+
+               <div class="form-group">
+                  <label for="world-title">World Title</label>
+                  <input type="text" id="world-title" class="form-control" required maxlength="100">
+               </div>
+
+               <div class="form-group">
+                  <label for="world-description">World Description</label>
+                  <textarea id="world-description" class="form-control" required maxlength="500"></textarea>
+                  <small id="description-counter">0/500 characters</small>
+               </div>
+
+               <div class="form-group">
+                  <label for="world-progress">Progress Description</label>
+                  <textarea id="world-progress" class="form-control" required maxlength="300"></textarea>
+                  <small id="progress-counter">0/300 characters</small>
+               </div>
+
+               <div class="form-group">
+                  <label for="days-played">Days Played</label>
+                  <input type="number" id="days-played" class="form-control" min="0" required>
+               </div>
+
+               <div class="form-group">
+                  <label for="world-structures">Structures Details</label>
+                  <textarea id="world-structures" class="form-control" required maxlength="200"></textarea>
+                  <small id="structures-counter">0/200 characters</small>
+               </div>
+
+               <button type="submit" class="btn btn-success" id="upload-button">
+                  <span>Upload World</span>
+                  <span class="hidden" id="upload-spinner">⏳ Uploading...</span>
+               </button>
+            </form>
+         </div>
+      </div>
+   </main>
+
+   <!-- Login Modal -->
+   <div id="login-modal" class="modal">
+      <div class="modal-content">
+         <button class="close-modal">&times;</button>
+         <h2>Login to Your Account</h2>
+         <form id="login-form">
+            <div class="form-group">
+               <label for="login-email">Email</label>
+               <input type="email" id="login-email" class="form-control" required>
+            </div>
+            <div class="form-group">
+               <label for="login-password">Password</label>
+               <input type="password" id="login-password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+         </form>
+         <p>
+            Don't have an account? <a href="#" id="show-signup">Sign up</a>
+         </p>
+      </div>
+   </div>
+
+   <!-- Signup Modal -->
+   <div id="signup-modal" class="modal">
+      <div class="modal-content">
+         <button class="close-modal">&times;</button>
+         <h2>Create an Account</h2>
+         <form id="signup-form">
+            <div class="form-group">
+               <label for="signup-email">Email</label>
+               <input type="email" id="signup-email" class="form-control" required>
+            </div>
+            <div class="form-group">
+               <label for="signup-password">Password</label>
+               <input type="password" id="signup-password" class="form-control" required minlength="6">
+            </div>
+            <div class="form-group">
+               <label for="signup-username">Username</label>
+               <input type="text" id="signup-username" class="form-control" required maxlength="30">
+            </div>
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+         </form>
+         <p>
+            Already have an account? <a href="#" id="show-login">Login</a>
+         </p>
+      </div>
+   </div>
+
+   <footer>
+      <div class="container footer-content">
+         <div class="logo-section">
+            <div class="logo">
+               ⛏️
+            </div>
+            <div class="title">
+               Minecraft Worlds Hub
+            </div>
+         </div>
+         <p>
+            Share and discover amazing Minecraft worlds with your friends
+         </p>
+         <div class="footer-links">
+            <a href="#" id="footer-about">About</a>
+            <a href="#" id="footer-privacy">Privacy</a>
+            <a href="#" id="footer-terms">Terms</a>
+            <a href="#" id="footer-contact">Contact</a>
+         </div>
+         <p>
+            &copy; 2023 Minecraft Worlds Hub. All rights reserved.
+         </p>
+      </div>
+   </footer>
+
+   <script>
+      // Supabase configuration
+      const supabaseUrl = "https://ftwycoucrtxkqstgdadk.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0d3ljb3VjcnR4a3FzdGdkYWRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3OTEyMjUsImV4cCI6MjA3NDM2NzIyNX0.fxzr_WNg607usd49zrksDC1K6wseYwDWnHAGJ1INla4";
+
+      // Initialize Supabase client with better error handling
+      let supabase;
+      try {
+         supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      } catch (error) {
+         console.error('Error initializing Supabase:', error);
+         // Fallback: Create a mock supabase object to prevent crashes
+         supabase = {
+            auth: {
+               getUser: () => Promise.resolve({
+                  data: {
+                     user: null
+                  }, error: null
+               }),
+               signOut: () => Promise.resolve({
+                  error: null
+               })
+            },
+            from: () => ({
+               select: () => ({
+                  order: () => Promise.resolve({
+                     data: [], error: null
+                  })
+               })
+            })
+         };
+      }
+
+      // State variables
+      let currentUser = null;
+      let selectedImages = [];
+      let selectedWorldFile = null;
+      let allWorlds = [];
+      let filteredWorlds = [];
+      let currentFilter = 'all';
+      let searchQuery = '';
+
+      // DOM Elements (will be initialized after DOM is loaded)
+      let navExplore, navUpload, navStats, loginBtn, logoutBtn, userInfo, userAvatar, username;
+      let pageTitle, pageSubtitle, worldsContainer, exploreSection, uploadSection, statsSection;
+      let loginModal, signupModal, loginForm, signupForm, showSignup, showLogin;
+      let closeModals, uploadForm, worldImagesInput, imagePreview, worldFileInput, worldFileName;
+      let searchInput, filterBtns, filterMine, totalWorlds, userWorlds, totalLikes;
+      let uploadButton, uploadSpinner, descriptionCounter, progressCounter, structuresCounter;
+
+      // Initialize the app after DOM is fully loaded
+      document.addEventListener('DOMContentLoaded', function() {
+         initializeApp();
+      });
+
+      // Initialize the application
+      function initializeApp() {
+         initializeDOMElements();
+         setupEventListeners();
+         checkAuthState().then(() => {
+            loadWorlds();
+         });
+         setupCharacterCounters();
+      }
+
+      // Initialize DOM elements with null checks
+      function initializeDOMElements() {
+         navExplore = document.getElementById('nav-explore');
+         navUpload = document.getElementById('nav-upload');
+         navStats = document.getElementById('nav-stats');
+         loginBtn = document.getElementById('login-btn');
+         logoutBtn = document.getElementById('logout-btn');
+         userInfo = document.getElementById('user-info');
+         userAvatar = document.getElementById('user-avatar');
+         username = document.getElementById('username');
+         pageTitle = document.getElementById('page-title');
+         pageSubtitle = document.getElementById('page-subtitle');
+         worldsContainer = document.getElementById('worlds-container');
+         exploreSection = document.getElementById('explore-section');
+         uploadSection = document.getElementById('upload-section');
+         statsSection = document.getElementById('stats-section');
+         loginModal = document.getElementById('login-modal');
+         signupModal = document.getElementById('signup-modal');
+         loginForm = document.getElementById('login-form');
+         signupForm = document.getElementById('signup-form');
+         showSignup = document.getElementById('show-signup');
+         showLogin = document.getElementById('show-login');
+         closeModals = document.querySelectorAll('.close-modal');
+         uploadForm = document.getElementById('upload-form');
+         worldImagesInput = document.getElementById('world-images');
+         imagePreview = document.getElementById('image-preview');
+         worldFileInput = document.getElementById('world-file');
+         worldFileName = document.getElementById('world-file-name');
+         searchInput = document.getElementById('search-input');
+         filterBtns = document.querySelectorAll('.filter-btn');
+         filterMine = document.getElementById('filter-mine');
+         totalWorlds = document.getElementById('total-worlds');
+         userWorlds = document.getElementById('user-worlds');
+         totalLikes = document.getElementById('total-likes');
+         uploadButton = document.getElementById('upload-button');
+         uploadSpinner = document.getElementById('upload-spinner');
+         descriptionCounter = document.getElementById('description-counter');
+         progressCounter = document.getElementById('progress-counter');
+         structuresCounter = document.getElementById('structures-counter');
+      }
+
+      // Check if user is logged in
+      async function checkAuthState() {
+         try {
+            const {
+               data: {
+                  user
+               },
+               error
+            } = await supabase.auth.getUser();
+            if (error) {
+               // Handle specific auth errors gracefully
+               if (error.message && error.message.includes('Auth session missing')) {
+                  // This is a common error that can be safely ignored
+                  console.log('No active auth session - user is not logged in');
+                  currentUser = null;
+                  updateUIForLoggedOutUser();
+                  return;
+               }
+               throw error;
+            }
+
+            if (user) {
+               currentUser = user;
+               await updateUIForLoggedInUser();
+            } else {
+               currentUser = null;
+               updateUIForLoggedOutUser();
+            }
+         } catch (error) {
+            console.error('Error checking auth state:', error);
+            currentUser = null;
+            updateUIForLoggedOutUser();
+         }
+      }
+
+      // Update UI when user is logged in
+      async function updateUIForLoggedInUser() {
+         if (!loginBtn || !logoutBtn || !userInfo || !navUpload || !navStats || !filterMine) return;
+
+         loginBtn.classList.add('hidden');
+         logoutBtn.classList.remove('hidden');
+         userInfo.classList.remove('hidden');
+         navUpload.classList.remove('hidden');
+         navStats.classList.remove('hidden');
+         filterMine.classList.remove('hidden');
+
+         // Set user info
+         const userData = await getUserData();
+         const displayName = userData?.username || (currentUser.email ? currentUser.email.split('@')[0]: 'User');
+         if (username) username.textContent = displayName;
+         if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
+
+         showExplorePage();
+      }
+
+      // Update UI when user is logged out
+      function updateUIForLoggedOutUser() {
+         if (!loginBtn || !logoutBtn || !userInfo || !navUpload || !navStats || !filterMine) return;
+
+         loginBtn.classList.remove('hidden');
+         logoutBtn.classList.add('hidden');
+         userInfo.classList.add('hidden');
+         navUpload.classList.add('hidden');
+         navStats.classList.add('hidden');
+         filterMine.classList.add('hidden');
+
+         showExplorePage();
+      }
+
+      // Show explore page
+      function showExplorePage() {
+         if (!pageTitle || !pageSubtitle || !exploreSection || !uploadSection || !statsSection) return;
+
+         if (pageTitle) pageTitle.textContent = 'Explore Minecraft Worlds';
+         if (pageSubtitle) pageSubtitle.textContent = 'Discover amazing worlds created by the community. Download, explore, and get inspired!';
+         if (exploreSection) exploreSection.classList.remove('hidden');
+         if (uploadSection) uploadSection.classList.add('hidden');
+         if (statsSection) statsSection.classList.add('hidden');
+
+         // Update active nav
+         if (navExplore) {
+            document.querySelectorAll('nav a').forEach(a => {
+               if (a.classList.contains('active')) a.classList.remove('active');
+            });
+            navExplore.classList.add('active');
+         }
+      }
+
+      // Show upload page
+      function showUploadPage() {
+         if (!currentUser) {
+            alert('Please log in to upload worlds');
+            return;
+         }
+
+         if (!pageTitle || !pageSubtitle || !exploreSection || !uploadSection || !statsSection) return;
+
+         if (pageTitle) pageTitle.textContent = 'Upload a New World';
+         if (pageSubtitle) pageSubtitle.textContent = 'Share your Minecraft world with the community';
+         if (exploreSection) exploreSection.classList.add('hidden');
+         if (uploadSection) uploadSection.classList.remove('hidden');
+         if (statsSection) statsSection.classList.add('hidden');
+
+         // Update active nav
+         if (navUpload) {
+            document.querySelectorAll('nav a').forEach(a => {
+               if (a.classList.contains('active')) a.classList.remove('active');
+            });
+            navUpload.classList.add('active');
+         }
+      }
+
+      // Show stats page
+      async function showStatsPage() {
+         if (!currentUser) {
+            alert('Please log in to view your stats');
+            return;
+         }
+
+         if (!pageTitle || !pageSubtitle || !exploreSection || !uploadSection || !statsSection) return;
+
+         if (pageTitle) pageTitle.textContent = 'Your Statistics';
+         if (pageSubtitle) pageSubtitle.textContent = 'Track your contributions to the community';
+         if (exploreSection) exploreSection.classList.add('hidden');
+         if (uploadSection) uploadSection.classList.add('hidden');
+         if (statsSection) statsSection.classList.remove('hidden');
+
+         // Update active nav
+         if (navStats) {
+            document.querySelectorAll('nav a').forEach(a => {
+               if (a.classList.contains('active')) a.classList.remove('active');
+            });
+            navStats.classList.add('active');
+         }
+
+         await updateStats();
+      }
+
+      // Update statistics
+      async function updateStats() {
+         if (!totalWorlds || !userWorlds || !totalLikes) return;
+
+         try {
+            // Total worlds
+            const {
+               count: totalWorldsCount,
+               error: totalError
+            } = await supabase
+            .from('worlds')
+            .select('*', {
+               count: 'exact', head: true
+            });
+
+            if (!totalError && totalWorlds) {
+               totalWorlds.textContent = totalWorldsCount || 0;
+            }
+
+            // User worlds
+            if (currentUser && userWorlds) {
+               const {
+                  count: userWorldsCount,
+                  error: userError
+               } = await supabase
+               .from('worlds')
+               .select('*', {
+                  count: 'exact', head: true
+               })
+               .eq('uploader_id', currentUser.id);
+
+               if (!userError) {
+                  userWorlds.textContent = userWorldsCount || 0;
+               }
+            }
+
+            // Total likes
+            const {
+               data: worlds,
+               error: likesError
+            } = await supabase
+            .from('worlds')
+            .select('likes');
+
+            if (!likesError && worlds && totalLikes) {
+               const totalLikesCount = worlds.reduce((sum, world) => sum + (world.likes || 0), 0);
+               totalLikes.textContent = totalLikesCount;
+            }
+         } catch (error) {
+            console.error('Error updating stats:', error);
+         }
+      }
+
+      // Get user data from profile
+      async function getUserData() {
+         if (!currentUser) return null;
+
+         try {
+            const {
+               data,
+               error
+            } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', currentUser.id)
+            .single();
+
+            if (error && error.code !== 'PGRST116') {
+               // PGRST116 is "not found"
+               throw error;
+            }
+
+            return data;
+         } catch (error) {
+            console.error('Error getting user data:', error);
+            return null;
+         }
+      }
+
+      // Load worlds from Supabase
+      async function loadWorlds() {
+         if (!worldsContainer) return;
+
+         try {
+            worldsContainer.innerHTML = '<div class="loading">Loading worlds...</div>';
+
+            let query = supabase
+            .from('worlds')
+            .select('*');
+
+            // Apply filter
+            if (currentFilter === 'recent') {
+               query = query.order('created_at', {
+                  ascending: false
+               });
+            } else if (currentFilter === 'popular') {
+               query = query.order('likes', {
+                  ascending: false
+               });
+            } else if (currentFilter === 'mine' && currentUser) {
+               query = query.eq('uploader_id', currentUser.id).order('created_at', {
+                  ascending: false
+               });
+            } else {
+               query = query.order('created_at', {
+                  ascending: false
+               });
+            }
+
+            const {
+               data: worlds,
+               error
+            } = await query;
+
+            if (error) {
+               if (error.code === '42P01') {
+                  // Table doesn't exist
+                  await createDatabaseTables();
+                  if (worldsContainer) {
+                     worldsContainer.innerHTML = '<div class="empty-state"><h3>No worlds yet</h3><p>Be the first to upload a world!</p></div>';
+                  }
+                  return;
+               }
+               throw error;
+            }
+
+            allWorlds = worlds || [];
+            applyFilters();
+
+         } catch (error) {
+            console.error('Error loading worlds:', error);
+            if (worldsContainer) {
+               worldsContainer.innerHTML = '<div class="alert alert-error">Error loading worlds. Please try again later.</div>';
+            }
+         }
+      }
+
+      // Create necessary database tables
+      async function createDatabaseTables() {
+         try {
+            // Since we can't directly execute SQL from the client, we'll handle this differently
+            // The tables will need to be created manually in the Supabase dashboard
+            console.log('Database tables need to be created manually in Supabase');
+         } catch (error) {
+            console.error('Error creating database tables:', error);
+         }
+      }
+
+      // Apply filters and search
+      function applyFilters() {
+         filteredWorlds = allWorlds.filter(world => {
+            // Apply search filter
+            if (searchQuery) {
+               const query = searchQuery.toLowerCase();
+               const matches =
+               (world.title && world.title.toLowerCase().includes(query)) ||
+               (world.description && world.description.toLowerCase().includes(query)) ||
+               (world.uploader_name && world.uploader_name.toLowerCase().includes(query)) ||
+               (world.progress_description && world.progress_description.toLowerCase().includes(query)) ||
+               (world.structures && world.structures.toLowerCase().includes(query));
+
+               if (!matches) return false;
+            }
+
+            // Apply mine filter
+            if (currentFilter === 'mine' && currentUser) {
+               return world.uploader_id === currentUser.id;
+            }
+
+            return true;
+         });
+
+         displayWorlds(filteredWorlds);
+      }
+
+      // Display worlds in the grid
+      function displayWorlds(worlds) {
+         if (!worldsContainer) return;
+
+         if (!worlds || worlds.length === 0) {
+            worldsContainer.innerHTML = `
+            <div class="empty-state">
+            <h3>No worlds found</h3>
+            <p>${searchQuery || currentFilter === 'mine' ? 'Try adjusting your search or filter': 'Be the first to upload a world!'}</p>
+            ${!currentUser ? '<button class="btn btn-primary" id="empty-login">Login to Upload</button>': ''}
+            </div>
+            `;
+
+            // Add event listener to login button if it exists
+            const emptyLoginBtn = document.getElementById('empty-login');
+            if (emptyLoginBtn) {
+               emptyLoginBtn.addEventListener('click', () => {
+                  if (loginModal) loginModal.style.display = 'flex';
+               });
+            }
+
+            return;
+         }
+
+         worldsContainer.innerHTML = '';
+         if (worldsContainer.classList) worldsContainer.classList.add('worlds-grid');
+
+         worlds.forEach((world, index) => {
+            const worldCard = createWorldCard(world);
+            if (worldCard) {
+               // Add animation delay for staggered effect
+               worldCard.style.animationDelay = `${index * 0.1}s`;
+               worldsContainer.appendChild(worldCard);
+            }
+         });
+
+         // Update stats
+         updateStats();
+      }
+
+      // Create a world card element
+      function createWorldCard(world) {
+         if (!world) return null;
+
+         const card = document.createElement('div');
+         card.className = 'world-card fade-in-up';
+
+         // Parse the images array
+         let images = [];
+         try {
+            images = typeof world.images === 'string' ? JSON.parse(world.images): world.images;
+            if (!Array.isArray(images)) images = [];
+         } catch (e) {
+            console.error('Error parsing images:', e);
+            images = [];
+         }
+
+         // Format the date
+         const uploadDate = world.created_at ? new Date(world.created_at).toLocaleDateString('en-GB'): 'Unknown date';
+
+         // Check if user has liked this world
+         const userLiked = world.user_has_liked || false;
+
+         card.innerHTML = `
+         <div class="world-images">
+         ${images.length > 0 ?
+         images.map((img, index) =>
+            `<img src="${img}" alt="World image ${index+1}" class="world-image ${index === 0 ? 'active': ''}" onerror="this.src='https://via.placeholder.com/300x200/2c3e50/ecf0f1?text=Image+Not+Found'">`
+         ).join(''):
+         '<img src="https://via.placeholder.com/300x200/2c3e50/ecf0f1?text=No+Image" alt="No image available" class="world-image active">'
+         }
+         ${images.length > 1 ? `
+         <div class="image-nav">
+         <button class="image-nav-btn prev-btn">&lt;</button>
+         <button class="image-nav-btn next-btn">&gt;</button>
+         </div>
+         <div class="image-dots">
+         ${images.map((_, index) =>
+            `<div class="image-dot ${index === 0 ? 'active': ''}" data-index="${index}"></div>`
+         ).join('')}
+         </div>
+         `: ''}
+         </div>
+         <div class="world-content">
+         <h3 class="world-title">${escapeHtml(world.title || 'Untitled World')}</h3>
+         <div class="world-meta">
+         <span>Seed: ${escapeHtml(world.seed || 'N/A')}</span>
+         <span>Days: ${world.days_played || 0}</span>
+         </div>
+         <p class="world-description">${escapeHtml(world.description || 'No description available')}</p>
+         <div class="world-stats">
+         <span>Progress: ${escapeHtml(world.progress_description || 'Not specified')}</span>
+         <span class="like-section">
+         <button class="like-btn ${userLiked ? 'liked': ''}" data-world-id="${world.id}">👍</button>
+         <span class="like-count">${world.likes || 0}</span>
+         </span>
+         </div>
+         <div class="world-stats">
+         <span>Structures: ${escapeHtml(world.structures || 'Not specified')}</span>
+         <span>Downloads: ${world.downloads || 0}</span>
+         </div>
+         <a href="#" class="download-btn" data-world-id="${world.id}">Download World</a>
+         <div class="uploader-info">
+         Uploaded by ${escapeHtml(world.uploader_name || 'Unknown')} on ${uploadDate}
+         </div>
+         </div>
+         `;
+
+         // Add image navigation functionality if there are multiple images
+         if (images.length > 1) {
+            setupImageNavigation(card, images.length);
+         }
+
+         // Add like functionality
+         const likeBtn = card.querySelector('.like-btn');
+         if (likeBtn) {
+            likeBtn.addEventListener('click', () => handleLike(world.id, likeBtn, card.querySelector('.like-count')));
+         }
+
+         // Add download functionality
+         const downloadBtn = card.querySelector('.download-btn');
+         if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+               e.preventDefault();
+               handleDownload(world.id, world.file_url, world.file_name);
+            });
+         }
+
+         return card;
+      }
+
+      // Setup image navigation for a world card
+      function setupImageNavigation(card, imageCount) {
+         const imageElements = card.querySelectorAll('.world-image');
+         const dots = card.querySelectorAll('.image-dot');
+         const prevBtn = card.querySelector('.prev-btn');
+         const nextBtn = card.querySelector('.next-btn');
+
+         if (!imageElements.length || !dots.length || !prevBtn || !nextBtn) return;
+
+         let currentImageIndex = 0;
+
+         function showImage(index) {
+            imageElements.forEach(img => img.classList.remove('active'));
+            dots.forEach(dot => dot.classList.remove('active'));
+
+            imageElements[index].classList.add('active');
+            dots[index].classList.add('active');
+            currentImageIndex = index;
+         }
+
+         prevBtn.addEventListener('click', () => {
+            const newIndex = (currentImageIndex - 1 + imageCount) % imageCount;
+            showImage(newIndex);
+         });
+
+         nextBtn.addEventListener('click', () => {
+            const newIndex = (currentImageIndex + 1) % imageCount;
+            showImage(newIndex);
+         });
+
+         // Add click handlers for dots
+         dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+               showImage(index);
+            });
+         });
+      }
+
+      // Handle like/unlike action
+      async function handleLike(worldId, likeBtn, likeCountElement) {
+         if (!currentUser) {
+            alert('Please log in to like worlds');
+            return;
+         }
+
+         if (!likeBtn || !likeCountElement) return;
+
+         const isLiked = likeBtn.classList.contains('liked');
+
+         try {
+            // For demo purposes, we'll just update the UI
+            // In a real app, you would make API calls to update the database
+
+            if (isLiked) {
+               // Unlike
+               likeBtn.classList.remove('liked');
+               likeCountElement.textContent = parseInt(likeCountElement.textContent) - 1;
+            } else {
+               // Like
+               likeBtn.classList.add('liked');
+               likeCountElement.textContent = parseInt(likeCountElement.textContent) + 1;
+            }
+
+            // Update total likes in stats
+            updateStats();
+         } catch (error) {
+            console.error('Error handling like:', error);
+            alert('Error updating like. Please try again.');
+         }
+      }
+
+      // Handle download
+      async function handleDownload(worldId, fileUrl, fileName) {
+         if (!currentUser) {
+            alert('Please log in to download worlds');
+            return;
+         }
+
+         try {
+            // For demo purposes, we'll just show an alert
+            // In a real app, you would increment the download count and trigger the download
+            alert(`Downloading: ${fileName || 'world file'}`);
+
+            // Reload worlds to update download counts (in a real app)
+            // loadWorlds();
+         } catch (error) {
+            console.error('Error handling download:', error);
+            alert('Error downloading file. Please try again.');
+         }
+      }
+
+      // Setup event listeners
+      function setupEventListeners() {
+         // Navigation
+         if (navExplore) {
+            navExplore.addEventListener('click', (e) => {
+               e.preventDefault();
+               showExplorePage();
+            });
+         }
+
+         if (navUpload) {
+            navUpload.addEventListener('click', (e) => {
+               e.preventDefault();
+               showUploadPage();
+            });
+         }
+
+         if (navStats) {
+            navStats.addEventListener('click', (e) => {
+               e.preventDefault();
+               showStatsPage();
+            });
+         }
+
+         // Auth buttons
+         if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+               if (loginModal) loginModal.style.display = 'flex';
+            });
+         }
+
+         if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+               try {
+                  const {
+                     error
+                  } = await supabase.auth.signOut();
+                  if (error) throw error;
+
+                  currentUser = null;
+                  updateUIForLoggedOutUser();
+                  await loadWorlds();
+               } catch (error) {
+                  console.error('Error logging out:', error);
+                  alert('Error logging out: ' + error.message);
+               }
+            });
+         }
+
+         // Modal controls
+         if (closeModals) {
+            closeModals.forEach(btn => {
+               btn.addEventListener('click', () => {
+                  if (loginModal) loginModal.style.display = 'none';
+                  if (signupModal) signupModal.style.display = 'none';
+               });
+            });
+         }
+
+         if (showSignup) {
+            showSignup.addEventListener('click', (e) => {
+               e.preventDefault();
+               if (loginModal) loginModal.style.display = 'none';
+               if (signupModal) signupModal.style.display = 'flex';
+            });
+         }
+
+         if (showLogin) {
+            showLogin.addEventListener('click', (e) => {
+               e.preventDefault();
+               if (signupModal) signupModal.style.display = 'none';
+               if (loginModal) loginModal.style.display = 'flex';
+            });
+         }
+
+         // Close modals when clicking outside
+         window.addEventListener('click',
+            (e) => {
+               if (loginModal && e.target === loginModal) {
+                  loginModal.style.display = 'none';
+               }
+               if (signupModal && e.target === signupModal) {
+                  signupModal.style.display = 'none';
+               }
+            });
+
+         // Login form
+         if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+               e.preventDefault();
+               const email = document.getElementById('login-email')?.value;
+               const password = document.getElementById('login-password')?.value;
+
+               if (!email || !password) {
+                  alert('Please fill in all fields');
+                  return;
+               }
+
+               try {
+                  const {
+                     data,
+                     error
+                  } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                     });
+
+                  if (error) throw error;
+
+                  currentUser = data.user;
+                  await updateUIForLoggedInUser();
+                  if (loginModal) loginModal.style.display = 'none';
+                  if (loginForm) loginForm.reset();
+                  await loadWorlds();
+               } catch (error) {
+                  alert('Login failed: ' + error.message);
+               }
+            });
+         }
+
+         // Signup form
+         if (signupForm) {
+            signupForm.addEventListener('submit', async (e) => {
+               e.preventDefault();
+               const email = document.getElementById('signup-email')?.value;
+               const password = document.getElementById('signup-password')?.value;
+               const usernameInput = document.getElementById('signup-username')?.value;
+
+               if (!email || !password || !usernameInput) {
+                  alert('Please fill in all fields');
+                  return;
+               }
+
+               try {
+                  const {
+                     data,
+                     error
+                  } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                           data: {
+                              username: usernameInput
+                           }
+                        }
+                     });
+
+                  if (error) throw error;
+
+                  alert('Signup successful! Please check your email for verification.');
+                  if (signupModal) signupModal.style.display = 'none';
+                  if (signupForm) signupForm.reset();
+               } catch (error) {
+                  alert('Signup failed: ' + error.message);
+               }
+            });
+         }
+
+         // Image selection
+         if (worldImagesInput) {
+            worldImagesInput.addEventListener('change', (e) => {
+               selectedImages = Array.from(e.target.files);
+               updateImagePreview();
+            });
+         }
+
+         // World file selection
+         if (worldFileInput) {
+            worldFileInput.addEventListener('change', (e) => {
+               if (e.target.files.length > 0) {
+                  selectedWorldFile = e.target.files[0];
+                  if (worldFileName) worldFileName.textContent = `Selected file: ${selectedWorldFile.name}`;
+               } else {
+                  selectedWorldFile = null;
+                  if (worldFileName) worldFileName.textContent = '';
+               }
+            });
+         }
+
+         // Upload form
+         if (uploadForm) {
+            uploadForm.addEventListener('submit', async (e) => {
+               e.preventDefault();
+               await handleWorldUpload();
+            });
+         }
+
+         // Search functionality
+         if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+               searchQuery = e.target.value.trim();
+               applyFilters();
+            });
+         }
+
+         // Filter functionality
+         if (filterBtns) {
+            filterBtns.forEach(btn => {
+               btn.addEventListener('click', () => {
+                  if (btn.dataset.filter === 'mine' && !currentUser) {
+                     alert('Please log in to view your worlds');
+                     return;
+                  }
+
+                  filterBtns.forEach(b => b.classList.remove('active'));
+                  btn.classList.add('active');
+                  currentFilter = btn.dataset.filter;
+                  applyFilters();
+               });
+            });
+         }
+
+         // Footer links
+         const footerAbout = document.getElementById('footer-about');
+         if (footerAbout) {
+            footerAbout.addEventListener('click', (e) => {
+               e.preventDefault();
+               alert('Minecraft Worlds Hub is a platform for sharing and discovering Minecraft worlds with friends.');
+            });
+         }
+
+         const footerPrivacy = document.getElementById('footer-privacy');
+         if (footerPrivacy) {
+            footerPrivacy.addEventListener('click', (e) => {
+               e.preventDefault();
+               alert('We value your privacy. Your data is securely stored and never shared with third parties.');
+            });
+         }
+
+         const footerTerms = document.getElementById('footer-terms');
+         if (footerTerms) {
+            footerTerms.addEventListener('click', (e) => {
+               e.preventDefault();
+               alert('By using this platform, you agree to respect other users and not upload inappropriate content.');
+            });
+         }
+
+         const footerContact = document.getElementById('footer-contact');
+         if (footerContact) {
+            footerContact.addEventListener('click', (e) => {
+               e.preventDefault();
+               alert('Contact us at: support@minecraftworldshub.com');
+            });
+         }
+      }
+
+      // Handle world upload
+      async function handleWorldUpload() {
+         if (!currentUser) {
+            alert('Please log in to upload worlds');
+            return;
+         }
+
+         // Validate form
+         if (selectedImages.length < 2 || selectedImages.length > 3) {
+            alert('Please select 2-3 images for your world');
+            return;
+         }
+
+         if (!selectedWorldFile) {
+            alert('Please select a world file');
+            return;
+         }
+
+         // Validate file extension
+         const validExtensions = ['.mcworld',
+            '.mctemplate',
+            '.zip'];
+         const fileExtension = selectedWorldFile.name.toLowerCase().substring(selectedWorldFile.name.lastIndexOf('.'));
+         if (!validExtensions.includes(fileExtension)) {
+            alert('Please select a valid world file (.mcworld, .mctemplate, or .zip)');
+            return;
+         }
+
+         // Show loading state
+         if (uploadButton) {
+            uploadButton.disabled = true;
+            const firstSpan = uploadButton.querySelector('span:first-child');
+            if (firstSpan) firstSpan.classList.add('hidden');
+            if (uploadSpinner) uploadSpinner.classList.remove('hidden');
+         }
+
+         try {
+            // For demo purposes, we'll just show a success message
+            // In a real app, you would upload files to storage and save to database
+
+            alert('World uploaded successfully! (Demo mode - files are not actually uploaded)');
+            if (uploadForm) uploadForm.reset();
+            selectedImages = [];
+            selectedWorldFile = null;
+            if (imagePreview) imagePreview.innerHTML = '';
+            if (worldFileName) worldFileName.textContent = '';
+
+            // Redirect to explore page and reload worlds
+            showExplorePage();
+            await loadWorlds();
+
+         } catch (error) {
+            console.error('Error uploading world:', error);
+            alert('Upload failed: ' + error.message);
+         } finally {
+            // Reset loading state
+            if (uploadButton) {
+               uploadButton.disabled = false;
+               const firstSpan = uploadButton.querySelector('span:first-child');
+               if (firstSpan) firstSpan.classList.remove('hidden');
+               if (uploadSpinner) uploadSpinner.classList.add('hidden');
+            }
+         }
+      }
+
+      // Update image preview
+      function updateImagePreview() {
+         if (!imagePreview) return;
+
+         imagePreview.innerHTML = '';
+
+         selectedImages.forEach((file, index) => {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+               const previewItem = document.createElement('div');
+               previewItem.className = 'file-preview-item';
+
+               previewItem.innerHTML = `
+               <img src="${e.target.result}" alt="Preview ${index+1}">
+               <button type="button" class="remove-file" data-index="${index}">&times;</button>
+               `;
+
+               imagePreview.appendChild(previewItem);
+
+               // Add remove functionality
+               const removeBtn = previewItem.querySelector('.remove-file');
+               if (removeBtn) {
+                  removeBtn.addEventListener('click', () => {
+                     selectedImages.splice(index, 1);
+                     updateImagePreview();
+                  });
+               }
+            };
+
+            reader.readAsDataURL(file);
+         });
+      }
+
+      // Setup character counters
+      function setupCharacterCounters() {
+         const descriptionTextarea = document.getElementById('world-description');
+         const progressTextarea = document.getElementById('world-progress');
+         const structuresTextarea = document.getElementById('world-structures');
+
+         if (descriptionTextarea && descriptionCounter) {
+            descriptionTextarea.addEventListener('input', () => {
+               descriptionCounter.textContent = `${descriptionTextarea.value.length}/500 characters`;
+            });
+         }
+
+         if (progressTextarea && progressCounter) {
+            progressTextarea.addEventListener('input', () => {
+               progressCounter.textContent = `${progressTextarea.value.length}/300 characters`;
+            });
+         }
+
+         if (structuresTextarea && structuresCounter) {
+            structuresTextarea.addEventListener('input', () => {
+               structuresCounter.textContent = `${structuresTextarea.value.length}/200 characters`;
+            });
+         }
+      }
+
+      // Utility function to escape HTML
+      function escapeHtml(text) {
+         if (!text) return '';
+         const div = document.createElement('div');
+         div.textContent = text;
+         return div.innerHTML;
+      }
+   </script>
+</body>
+</html>
