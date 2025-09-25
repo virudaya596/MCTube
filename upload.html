@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Upload World - Minecraft Worlds</title>
+   < src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+   </script>
+   <link rel="stylesheet" href="style.css">
+</head>
+<body>
+   <nav class="navbar">
+      <div class="nav-container">
+         <h1 class="logo">🎮 Upload World</h1>
+         <div class="nav-links">
+            <a href="index.html" class="nav-link">Explore</a>
+            <a href="dashboard.html" class="nav-link">My Worlds</a>
+            <button onclick="logout()" class="nav-link">Logout</button>
+         </div>
+      </div>
+   </nav>
+
+   <div class="container">
+      <form id="uploadForm" class="upload-form">
+         <h2>Upload Your Minecraft World</h2>
+
+         <!-- Images Upload -->
+         <div class="form-section">
+            <label>World Images (2-3 pictures)</label>
+            <input type="file" id="worldImages" accept="image/*" multiple required>
+            <div id="imagePreview" class="image-preview"></div>
+         </div>
+
+         <!-- World File -->
+         <div class="form-section">
+            <label>World File (.mcworld, .mctemplate, .zip)</label>
+            <input type="file" id="worldFile" accept=".mcworld,.mctemplate,.zip" required>
+         </div>
+
+         <!-- Basic Details -->
+         <div class="form-section">
+            <label>World Name *</label>
+            <input type="text" id="worldName" required>
+         </div>
+
+         <div class="form-section">
+            <label>World Seed</label>
+            <input type="text" id="worldSeed" placeholder="Leave blank for random">
+         </div>
+
+         <div class="form-section">
+            <label>World Description</label>
+            <textarea id="worldDescription" rows="3" placeholder="Describe your world..."></textarea>
+         </div>
+
+         <!-- Progress Details -->
+         <div class="form-section">
+            <label>Your Progress Description</label>
+            <textarea id="progressDescription" rows="3" placeholder="What have you accomplished?"></textarea>
+         </div>
+
+         <div class="form-section">
+            <label>Days Played</label>
+            <input type="number" id="daysPlayed" min="0">
+         </div>
+
+         <div class="form-section">
+            <label>Structures Built</label>
+            <textarea id="structures" rows="2" placeholder="What structures have you built?"></textarea>
+         </div>
+
+         <button type="submit" class="submit-btn">Upload World</button>
+      </form>
+   </div>
+
+   <!-- Previous HTML code remains the same -->
+
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+<script>
+    // Check authentication on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Handle image preview
+        document.getElementById('worldImages').addEventListener('change', function(e) {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Handle form submission
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await uploadWorld();
+        });
+    });
+
+    async function uploadWorld() {
+        const submitBtn = document.querySelector('.submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading...';
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Please login first');
+
+            // Upload world file
+            const worldFile = document.getElementById('worldFile').files[0];
+            if (!worldFile) throw new Error('Please select a world file');
+
+            const worldFileName = `worlds/${Date.now()}_${worldFile.name}`;
+            const { error: worldError } = await supabase.storage
+                .from('minecraft-worlds')
+                .upload(worldFileName, worldFile);
+
+            if (worldError) throw worldError;
+
+            const { data: urlData } = supabase.storage
+                .from('minecraft-worlds')
+                .getPublicUrl(worldFileName);
+
+            // Insert world record
+            const { data: world, error: dbError } = await supabase
+                .from('worlds')
+                .insert([{
+                    title: document.getElementById('worldName').value,
+                    seed: document.getElementById('worldSeed').value,
+                    description: document.getElementById('worldDescription').value,
+                    progress_description: document.getElementById('progressDescription').value,
+                    days_played: parseInt(document.getElementById('daysPlayed').value) || 0,
+                    structures: document.getElementById('structures').value,
+                    world_file_url: urlData.publicUrl,
+                    uploaded_by: user.id,
+                    uploaded_by_name: user.email.split('@')[0]
+                }])
+                .select()
+                .single();
+
+            if (dbError) throw dbError;
+
+            // Upload images
+            const imageFiles = document.getElementById('worldImages').files;
+            for (let file of imageFiles) {
+                const imageName = `images/${Date.now()}_${file.name}`;
+                const { error: imageError } = await supabase.storage
+                    .from('minecraft-worlds')
+                    .upload(imageName, file);
+
+                if (imageError) throw imageError;
+
+                const { data: imageUrlData } = supabase.storage
+                    .from('minecraft-worlds')
+                    .getPublicUrl(imageName);
+
+                await supabase
+                    .from('world_images')
+                    .insert([{
+                        world_id: world.id,
+                        image_url: imageUrlData.publicUrl
+                    }]);
+            }
+
+            alert('World uploaded successfully!');
+            window.location.href = 'index.html';
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Error uploading world: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Upload World';
+        }
+    }
+</script>
+</body>
+</html>

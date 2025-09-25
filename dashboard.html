@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>My Worlds - Minecraft Worlds</title>
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   <link rel="stylesheet" href="style.css">
+</head>
+<body>
+   <nav class="navbar">
+      <div class="nav-container">
+         <h1 class="logo">🎮 My Worlds</h1>
+         <div class="nav-links">
+            <a href="index.html" class="nav-link">Explore</a>
+            <a href="upload.html" class="nav-link">Upload New</a>
+            <button onclick="logout()" class="nav-link">Logout</button>
+         </div>
+      </div>
+   </nav>
+
+   <div class="container">
+      <h2 style="color: white; text-align: center; margin-bottom: 2rem;">My Uploaded Worlds</h2>
+      <div class="worlds-grid" id="myWorldsGrid">
+         Loading your worlds...
+      </div>
+   </div>
+
+   <script src="supabase-config.js"></script>
+   <script src="auth.js"></script>
+   <script>
+      document.addEventListener('DOMContentLoaded', async function() {
+         const {
+            data: {
+               user
+            }
+         } = await supabase.auth.getUser();
+         if (!user) {
+            window.location.href = 'login.html';
+            return;
+         }
+
+         loadMyWorlds(user.id);
+      });
+
+      async function loadMyWorlds(userId) {
+         try {
+            const {
+               data: worlds, error
+            } = await supabase
+            .from('worlds')
+            .select(`
+               *,
+               world_images(image_url),
+               world_likes(count)
+               `)
+            .eq('uploaded_by',
+               userId)
+            .order('uploaded_at',
+               {
+                  ascending: false
+               });
+
+            if (error) throw error;
+
+            displayMyWorlds(worlds);
+         } catch (error) {
+            console.error('Error loading worlds:', error);
+         }
+      }
+
+      function displayMyWorlds(worlds) {
+         const grid = document.getElementById('myWorldsGrid');
+
+         if (!worlds || worlds.length === 0) {
+            grid.innerHTML = '<p style="color: white; text-align: center;">You haven\'t uploaded any worlds yet. <a href="upload.html" style="color: #ffd700;">Upload your first world!</a></p>';
+            return;
+         }
+
+         // Use the same display function as index.html
+         grid.innerHTML = worlds.map(world => {
+            // ... same card HTML as index.html ...
+         }).join('');
+      }
+   </script>
+</body>
+</html>
